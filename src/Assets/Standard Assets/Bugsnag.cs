@@ -46,21 +46,39 @@ public class Bugsnag : MonoBehaviour {
             [DllImport ("bugsnag")]
             public static extern void SetReleaseStage(string releaseStage);
         
-            [DllImport ("bugsnag")]
-            public static extern void Notify(string errorClass, string errorMessage, string stackTrace);
+            public static void Notify(string errorClass, string errorMessage, string stackTrace) {
+                AndroidJavaObject bugsnagAndroidClass = new AndroidJavaObject("com.bugsnag.android.BugsnagUnity");
+
+				using(AndroidJavaObject jsonArray = new AndroidJavaObject("org.json.JSONArray")) {
+                    jsonArray.Call<AndroidJavaObject>("put", 1);
+                    jsonArray.Call<AndroidJavaObject>("put", 2);
+                    jsonArray.Call<AndroidJavaObject>("put", 3);
+                    
+                    using(AndroidJavaObject jsonObject = new AndroidJavaObject("org.json.JSONObject")) {
+                        using(AndroidJavaObject key = new AndroidJavaObject("java.lang.String", "file")) {
+                            using(AndroidJavaObject val = new AndroidJavaObject("java.lang.String", "fileNameHere")) {
+                                jsonObject.Call<AndroidJavaObject>("put", key, val);
+                            }
+                        }
+                        jsonArray.Call<AndroidJavaObject>("put", jsonObject);
+                    }
+                    
+                    bugsnagAndroidClass.CallStatic("notifyTest", errorClass, errorMessage, jsonArray);
+                }
+            }
                 
             [DllImport ("bugsnag")]
             public static extern void Register(string apiKey);
-                
+            
             [DllImport ("bugsnag")]
             public static extern void SetUseSSL(bool useSSL);
             
             [DllImport ("bugsnag")]
             public static extern void SetAutoNotify(bool autoNotify);
-                
+            
             [DllImport ("bugsnag")]
             public static extern void AddToTab(string tabName, string attributeName, string attributeValue);
-                
+            
             [DllImport ("bugsnag")]
             public static extern void ClearTab(string tabName);
         #else
@@ -168,7 +186,9 @@ public class Bugsnag : MonoBehaviour {
     }
 
     public static void Notify(Exception e) {
-        NativeBugsnag.Notify(e.GetType().ToString(), e.Message, e.StackTrace);
+        if(e != null && e.StackTrace != null) {
+      			NativeBugsnag.Notify(e.GetType().ToString(), e.Message, e.StackTrace);
+        }
     }
         
     public static void AddToTab(string tabName, string attributeName, string attributeValue) {
